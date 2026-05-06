@@ -5,10 +5,14 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
+        <UserSecretsId>a971dee6-887f-4910-9aba-44cd4a62a35c</UserSecretsId>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.7" />
+        <PackageReference Include="Dapper" Version="2.1.72"/>
+        <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.1"/>
+        <PackageReference Include="Microsoft.Data.SqlClient.Extensions.Abstractions" Version="1.0.0"/>
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.7"/>
     </ItemGroup>
 
 </Project>
