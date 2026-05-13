@@ -1,0 +1,32 @@
+.dashboard-grid {
+    display: flex;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+.dashboard-card {
+    background: #f8f9fa;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    padding: 1.5rem 2rem;
+    min-width: 200px;
+    flex: 1;
+}
+.dashboard-value {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #0078d4;
+    margin: 0.5rem 0 0 0;
+}
+.dashboard-section {
+    margin-top: 2rem;
+}
+.dashboard-chart-placeholder {
+    background: #e9ecef;
+    border-radius: 8px;
+    height: 220px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #888;
+    font-size: 1.2rem;
+}
