@@ -1,5 +1,6 @@
 using AfvalMonitoring.Components;
-using AfvalMonitoring.Repositories;
+using AfvalMonitoring.Data;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -9,6 +10,17 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 builder.Services.AddControllers();
 
+var sqlConnectionString = builder.Configuration.GetValue<string>("SqlConnectionString");
+var sqlConnectionStringFound = !string.IsNullOrWhiteSpace(sqlConnectionString);
+
+builder.Services.AddDbContext<ExampleDBContext>(opt =>
+{
+    opt.UseSqlServer(sqlConnectionString);
+});
+builder.Services.AddDbContext<DataDbContext>(opt =>
+{
+    opt.UseSqlServer(sqlConnectionString);
+});
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -20,11 +32,8 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-var sqlConnectionString = builder.Configuration.GetValue<string>("SqlConnectionString");
-var sqlConnectionStringFound = !string.IsNullOrWhiteSpace(sqlConnectionString);
 
-//Add services BEFORE building the app
-builder.Services.AddTransient<IExampleRepo, SQLExampleRepo>(o => new SQLExampleRepo(sqlConnectionString!));
+//Add Repositories BEFORE building the app. Use SCOPED
 
 
 var app = builder.Build();
