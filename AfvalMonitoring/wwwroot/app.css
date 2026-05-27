@@ -57,4 +57,15 @@ h1:focus {
 
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
+
+}
+
+canvas {
+    display: block;
+    background: #fff;
+    border: 1px solid #ccc;
+    margin-bottom: 1rem;
+    min-height: 200px;
+    min-width: 200px;
+    max-width: 100%;
 }

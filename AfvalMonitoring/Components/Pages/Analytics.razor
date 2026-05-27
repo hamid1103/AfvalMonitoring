@@ -1,0 +1,41 @@
+﻿@page "/analytics"
+@using AfvalMonitoring.Services
+@using AfvalMonitoring.Models
+@inject AfvalService Service
+@inject IJSRuntime JS
+
+<h3>Afval Analyse Dashboard</h3>
+
+@if (data == null)
+{
+    <p>Loading data...</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Label</th>
+                <th>Aantal</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in data)
+            {
+                <tr>
+                    <td>@item.Label</td>
+                    <td>@item.Count</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<LabelCount>? data;
+
+    protected override async Task OnInitializedAsync()
+    {
+        data = await Service.GetLabelStats();
+    }
+}

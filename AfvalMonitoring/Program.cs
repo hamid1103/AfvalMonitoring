@@ -20,11 +20,18 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
+
 var sqlConnectionString = builder.Configuration.GetValue<string>("SqlConnectionString");
 var sqlConnectionStringFound = !string.IsNullOrWhiteSpace(sqlConnectionString);
 
-//Add services BEFORE building the app
+// Add services BEFORE building the app
 builder.Services.AddTransient<IExampleRepo, SQLExampleRepo>(o => new SQLExampleRepo(sqlConnectionString!));
+
+// Register AfvalService for DI with HttpClient and set BaseAddress to backend API
+builder.Services.AddHttpClient<AfvalMonitoring.Services.AfvalService>(client =>
+{
+    client.BaseAddress = new Uri("http://127.0.0.1:8000/");
+});
 
 
 var app = builder.Build();

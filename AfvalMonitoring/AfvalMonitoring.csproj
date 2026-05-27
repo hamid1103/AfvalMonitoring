@@ -9,10 +9,14 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Dapper" Version="2.1.72"/>
-        <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.1"/>
-        <PackageReference Include="Microsoft.Data.SqlClient.Extensions.Abstractions" Version="1.0.0"/>
-        <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.7"/>
+        <PackageReference Include="Dapper" Version="2.1.72" />
+        <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.1" />
+        <PackageReference Include="Microsoft.Data.SqlClient.Extensions.Abstractions" Version="1.0.0" />
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.7" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="wwwroot\js\" />
     </ItemGroup>
 
 </Project>
