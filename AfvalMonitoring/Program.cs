@@ -1,5 +1,6 @@
 using AfvalMonitoring.Components;
-using AfvalMonitoring.Repositories;
+using AfvalMonitoring.Data;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -9,6 +10,17 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 builder.Services.AddControllers();
 
+var sqlConnectionString = builder.Configuration.GetValue<string>("SqlConnectionString");
+var sqlConnectionStringFound = !string.IsNullOrWhiteSpace(sqlConnectionString);
+
+builder.Services.AddDbContext<ExampleDBContext>(opt =>
+{
+    opt.UseSqlServer(sqlConnectionString);
+});
+builder.Services.AddDbContext<DataDbContext>(opt =>
+{
+    opt.UseSqlServer(sqlConnectionString);
+});
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>

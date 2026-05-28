@@ -1,6 +1,7 @@
+using AfvalMonitoring.Data;
 using AfvalMonitoring.Models;
-using AfvalMonitoring.Repositories;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace AfvalMonitoring.Controllers;
 
@@ -8,32 +9,36 @@ namespace AfvalMonitoring.Controllers;
 [Route("api/[controller]")]
 public class ExampleController : ControllerBase
 {
-    private readonly IExampleRepo _exampleRepo;
+    private readonly ExampleDBContext _exampleDbContext;
 
-    public ExampleController(IExampleRepo exampleRepo)
+    public ExampleController(ExampleDBContext _exampleDbContext)
     {
-        _exampleRepo = exampleRepo;
+        this._exampleDbContext = _exampleDbContext;
     }
 
     [HttpGet]
     public async Task<ActionResult<IEnumerable<ExampleObject>>> GetAll()
     {
-        var exampleObjects = await _exampleRepo.SelectAsync();
+        //var exampleObjects = await _exampleRepo.SelectAsync();
+        var exampleObjects = await _exampleDbContext.ExampleObjects.OrderByDescending(o=>o.Id).Take(10).ToListAsync();
         return Ok(exampleObjects);
     }
 
     [HttpGet("{id}")]
     public async Task<ActionResult<ExampleObject>> GetById(Guid id)
     {
-        var obj = await _exampleRepo.SelectAsync(id);
-        return Ok(new { Id = id, Name = "Student " + id });
+        //var obj = await _exampleRepo.SelectAsync(id);
+        var obj = await _exampleDbContext.ExampleObjects.FirstOrDefaultAsync(m =>m.Id == id);
+        return Ok(new { Id = id, Name = $"Example {obj.Id} = {obj.Name}:{obj.Number}" });
     }
 
     [HttpPost]
     public async Task<ActionResult> AddObject(ExampleObject obj)
     {
         obj.Id = Guid.NewGuid();
-        await _exampleRepo.InsertAsync(obj);
+        //await _exampleRepo.InsertAsync(obj);
+        await _exampleDbContext.ExampleObjects.AddAsync(obj);
+        await _exampleDbContext.SaveChangesAsync();
         return Ok();
     }
 }
