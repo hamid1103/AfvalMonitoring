@@ -33,11 +33,8 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 
-var sqlConnectionString = builder.Configuration.GetValue<string>("SqlConnectionString");
-var sqlConnectionStringFound = !string.IsNullOrWhiteSpace(sqlConnectionString);
-
 // Add services BEFORE building the app
-builder.Services.AddTransient<IExampleRepo, SQLExampleRepo>(o => new SQLExampleRepo(sqlConnectionString!));
+//builder.Services.AddTransient<IExampleRepo, SQLExampleRepo>(o => new SQLExampleRepo(sqlConnectionString!));
 
 // Register AfvalService for DI with HttpClient and set BaseAddress to backend API
 builder.Services.AddHttpClient<AfvalMonitoring.Services.AfvalService>(client =>
