@@ -1,4 +1,5 @@
 ﻿@page "/analytics"
+@rendermode InteractiveServer
 @using AfvalMonitoring.Services
 @using AfvalMonitoring.Models
 @inject AfvalService Service
@@ -6,36 +7,104 @@
 
 <h3>Afval Analyse Dashboard</h3>
 
+<div class="mb-3" style="max-width: 420px;">
+    <label for="confidenceFilter" class="form-label">
+        Min confidence: @minConfidencePercentage%
+    </label>
+    <input id="confidenceFilter"
+           type="range"
+           class="form-range"
+           min="0"
+           max="100"
+           step="1"
+           @bind="minConfidencePercentage"
+           @bind:event="oninput"
+           @onchange="OnConfidenceChanged"
+           style="direction: rtl;" />
+    <div class="text-muted small">Slider loopt van 100% naar 0%. Standaard: 0% (alles >= 0%).</div>
+</div>
+
 @if (data == null)
 {
     <p>Loading data...</p>
 }
 else
 {
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Label</th>
-                <th>Aantal</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var item in data)
-            {
-                <tr>
-                    <td>@item.Label</td>
-                    <td>@item.Count</td>
-                </tr>
-            }
-        </tbody>
-    </table>
+    <div class="row align-items-start g-4">
+        <div class="col-12 col-lg-6">
+            <div style="max-width: 480px;">
+                <canvas id="labelPieChart"></canvas>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-6">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Label</th>
+                        <th>Aantal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in data)
+                    {
+                        <tr>
+                            <td>@item.Label</td>
+                            <td>@item.Count</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
 }
 
 @code {
     private List<LabelCount>? data;
+    private int minConfidencePercentage;
 
     protected override async Task OnInitializedAsync()
     {
-        data = await Service.GetLabelStats();
+        await LoadDataAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (data == null)
+        {
+            return;
+        }
+
+        await TryRenderChartAsync();
+    }
+
+    private async Task OnConfidenceChanged(ChangeEventArgs _)
+    {
+        await LoadDataAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task LoadDataAsync()
+    {
+        data = await Service.GetLabelStats(minConfidencePercentage);
+    }
+
+    private async Task TryRenderChartAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync(
+                "renderLabelPieChart",
+                data!.Select(x => x.Label).ToArray(),
+                data.Select(x => x.Count).ToArray());
+        }
+        catch (JSException)
+        {
+            // JS nog niet beschikbaar; opnieuw proberen bij volgende render.
+        }
+        catch (InvalidOperationException)
+        {
+            // Interop nog niet beschikbaar tijdens prerender; opnieuw proberen.
+        }
     }
 }
