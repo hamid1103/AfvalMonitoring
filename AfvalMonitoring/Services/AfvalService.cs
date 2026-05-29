@@ -2,6 +2,7 @@
 namespace AfvalMonitoring.Services
 {
     using AfvalMonitoring.Models;
+    using System.Text.Json;
 
     public class AfvalService
     {
@@ -14,15 +15,36 @@ namespace AfvalMonitoring.Services
 
         public async Task<List<LabelCount>> GetLabelStats(int minConfidencePercentage = 0)
         {
-            var confidencePercentage = Math.Clamp(minConfidencePercentage, 0, 100);
-            var confidence = confidencePercentage / 100.0;
-            var endpoint = $"analytics/by-label?Confidence={confidence.ToString(System.Globalization.CultureInfo.InvariantCulture)}";
+            var threshold = Math.Clamp(minConfidencePercentage, 0, 100) / 100.0;
 
-            var json = await _http.GetStringAsync(endpoint);
+            var json = await _http.GetStringAsync("afval");
             Console.WriteLine($"API RAW: {json}");
-            var result = System.Text.Json.JsonSerializer.Deserialize<List<LabelCount>>(json);
-            Console.WriteLine($"API PARSED COUNT: {result?.Count}");
-            return result ?? new List<LabelCount>();
+
+            using var document = JsonDocument.Parse(json);
+
+            var result = document.RootElement
+                .EnumerateArray()
+                .Select(item => new
+                {
+                    Label = item.TryGetProperty("Label", out var labelProp)
+                        ? labelProp.GetString()
+                        : (item.TryGetProperty("label", out var labelPropLower) ? labelPropLower.GetString() : null),
+                    Confidence = item.TryGetProperty("Confidence", out var confidenceProp)
+                        ? confidenceProp.GetDouble()
+                        : (item.TryGetProperty("confidence", out var confidencePropLower) ? confidencePropLower.GetDouble() : 0d)
+                })
+                .Where(x => !string.IsNullOrWhiteSpace(x.Label) && x.Confidence >= threshold)
+                .GroupBy(x => x.Label!)
+                .Select(g => new LabelCount
+                {
+                    Label = g.Key,
+                    Count = g.Count()
+                })
+                .OrderByDescending(x => x.Count)
+                .ToList();
+
+            Console.WriteLine($"API PARSED COUNT: {result.Count}");
+            return result;
         }
     }
 }
