@@ -19,23 +19,45 @@ public class DataDbContextRepository : IDataRepository
         return objects;
     }
 
-    public Task<DataObject> GetDataObject(Guid id)
+    public async Task<DataObject?> GetDataObject(Guid id)
     {
-        throw new NotImplementedException();
+        DataObject? dataObject = await _db.DataObjects.FindAsync(id);
+        return dataObject;
     }
 
-    public Task SaveDataObject(DataObject obj)
+    public async Task SaveDataObject(DataObject obj)
     {
-        throw new NotImplementedException();
+        if (obj.Id == Guid.Empty)
+        {
+            obj.Id = Guid.NewGuid();
+        }
+        await _db.DataObjects.AddAsync(obj);
+        await _db.SaveChangesAsync();
     }
 
-    public Task UpdateDataObject(DataObject obj)
+    public async Task SaveDataObjects(List<DataObject> objs)
     {
-        throw new NotImplementedException();
+        foreach (var obj in objs)
+        {
+            if (obj.Id == Guid.Empty)
+            {
+                obj.Id = Guid.NewGuid();
+            }
+            await _db.DataObjects.AddAsync(obj);
+        }
+        await _db.SaveChangesAsync();
     }
 
-    public Task DeleteDataObject(Guid id)
+    public async Task UpdateDataObject(DataObject obj)
     {
-        throw new NotImplementedException();
+        _db.DataObjects.Update(obj);
+        await _db.SaveChangesAsync();
+    }
+
+    public async Task DeleteDataObject(Guid id)
+    {
+        _db.DataObjects.Remove(await _db.DataObjects.FindAsync(id));
+        
+        await _db.SaveChangesAsync();
     }
 }

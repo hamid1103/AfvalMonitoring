@@ -9,7 +9,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Dapper" Version="2.1.72"/>
         <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.1"/>
         <PackageReference Include="Microsoft.Data.SqlClient.Extensions.Abstractions" Version="1.0.0"/>
         <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.8" />

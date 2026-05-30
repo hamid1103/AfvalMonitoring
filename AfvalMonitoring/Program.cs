@@ -1,5 +1,6 @@
 using AfvalMonitoring.Components;
 using AfvalMonitoring.Data;
+using AfvalMonitoring.Repositories.DataController;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 
@@ -35,6 +36,7 @@ builder.Services.AddSwaggerGen(options =>
 
 // Add services BEFORE building the app
 //builder.Services.AddTransient<IExampleRepo, SQLExampleRepo>(o => new SQLExampleRepo(sqlConnectionString!));
+builder.Services.AddScoped<IDataRepository, DataDbContextRepository>();
 
 // Register AfvalService for DI with HttpClient and set BaseAddress to backend API
 builder.Services.AddHttpClient<AfvalMonitoring.Services.AfvalService>(client =>
