@@ -24,17 +24,17 @@
     <div class="text-muted small">Slider loopt van 100% naar 0%. Standaard: 0% (alles >= 0%).</div>
 </div>
 
-@if (data == null)
+@if (labelData == null || dagData == null)
 {
     <p>Loading data...</p>
 }
 else
 {
     <div class="mb-3">
-        <strong>Totaal aantal (gefilterd): @data.Sum(x => x.Count)</strong>
+        <strong>Totaal aantal (gefilterd): @labelData.Sum(x => x.Count)</strong>
     </div>
 
-    <div class="row align-items-start g-4">
+    <div class="row align-items-start g-4 mb-5">
         <div class="col-12 col-lg-6">
             <div style="max-width: 480px;">
                 <canvas id="labelPieChart"></canvas>
@@ -50,7 +50,7 @@ else
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var item in data)
+                    @foreach (var item in labelData)
                     {
                         <tr>
                             <td>@item.Label</td>
@@ -61,10 +61,44 @@ else
             </table>
         </div>
     </div>
+
+    <hr />
+    <h4 class="mt-5 mb-4">Gegevens per dag</h4>
+
+    <div class="row g-3">
+        @foreach (var dayGroup in dagData.GroupBy(x => x.Date).OrderBy(g => g.Key))
+        {
+            <div class="col-12 col-md-6 col-lg-4">
+                <div class="card h-100">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">@dayGroup.Key.ToString("dddd, dd MMM")</h6>
+                    </div>
+                    <div class="card-body p-0">
+                        <table class="table table-sm mb-0">
+                            <tbody>
+                                @foreach (var item in dayGroup.OrderBy(x => x.Label))
+                                {
+                                    <tr>
+                                        <td>@item.Label</td>
+                                        <td class="text-end"><strong>@item.Count</strong></td>
+                                    </tr>
+                                }
+                                <tr class="table-active fw-bold">
+                                    <td>Totaal</td>
+                                    <td class="text-end">@dayGroup.Sum(x => x.Count)</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
 }
 
 @code {
-    private List<LabelCount>? data;
+    private List<LabelCount>? labelData;
+    private List<AfvalPerDag>? dagData;
     private int minConfidencePercentage;
 
     protected override async Task OnInitializedAsync()
@@ -74,7 +108,7 @@ else
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (data == null)
+        if (labelData == null)
         {
             return;
         }
@@ -90,7 +124,8 @@ else
 
     private async Task LoadDataAsync()
     {
-        data = await Service.GetLabelStats(minConfidencePercentage);
+        labelData = await Service.GetLabelStats(minConfidencePercentage);
+        dagData = await Service.GetDailyLabelStats(minConfidencePercentage);
     }
 
     private async Task TryRenderChartAsync()
@@ -99,8 +134,8 @@ else
         {
             await JS.InvokeVoidAsync(
                 "renderLabelPieChart",
-                data!.Select(x => x.Label).ToArray(),
-                data.Select(x => x.Count).ToArray());
+                labelData!.Select(x => x.Label).ToArray(),
+                labelData.Select(x => x.Count).ToArray());
         }
         catch (JSException)
         {
