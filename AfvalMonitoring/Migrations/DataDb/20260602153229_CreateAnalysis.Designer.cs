@@ -4,6 +4,7 @@ using AfvalMonitoring.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AfvalMonitoring.Migrations.DataDb
 {
     [DbContext(typeof(DataDbContext))]
-    partial class DataDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260602153229_CreateAnalysis")]
+    partial class CreateAnalysis
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -105,47 +108,6 @@ namespace AfvalMonitoring.Migrations.DataDb
                     b.HasKey("Id");
 
                     b.ToTable("DataObjects");
-                });
-
-            modelBuilder.Entity("AfvalMonitoring.Models.Voorspelling", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("Biodegradable")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Cloth")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("EndDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("Glass")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Metal")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Paper")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Plastic")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("StartDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("StreetName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Voorspellingen");
                 });
 #pragma warning restore 612, 618
         }
