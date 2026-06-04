@@ -28,22 +28,22 @@
 @if (errorMessage != null)
 {
     <div class="alert alert-danger">
-        <strong>❌ Fout bij laden van locaties:</strong>
+        <strong>Fout bij laden van locaties:</strong>
         <pre class="mb-0" style="white-space: pre-wrap;">@errorMessage</pre>
     </div>
 }
 else if (locations == null)
 {
-    <p>⏳ Kaart laden...</p>
+    <p>Kaart laden</p>
 }
 else if (locations.Count == 0)
 {
-    <p class="alert alert-warning">⚠️ Geen locaties gevonden met geldige coördinaten</p>
+    <p class="alert alert-warning">Geen locaties gevonden met geldige coördinaten</p>
 }
 else
 {
     <div class="mb-3">
-        <strong>📍 Totaal locaties: @locations.Count</strong>
+        <strong>Totaal locaties: @locations.Count</strong>
     </div>
 
     <div id="map" style="width: 100%; height: 600px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); background-color: #f0f0f0;"></div>
@@ -122,7 +122,7 @@ else
             return;
         }
 
-        Console.WriteLine($"Map.razor: OnAfterRenderAsync called, locations.Count={locations.Count}");
+        Console.WriteLine($"OnAfterRenderAsync called with {locations.Count} locations");
         await TryRenderMapAsync();
     }
 
@@ -143,7 +143,7 @@ else
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error loading locations: {ex}");
+            Console.WriteLine($"LoadLocationsAsync error: {ex.GetType().Name}: {ex.Message}");
             errorMessage = $"{ex.GetType().Name}: {ex.Message}";
             locations = new List<TrashLocation>();
         }
@@ -165,21 +165,21 @@ else
                 })
                 .ToList();
 
-            Console.WriteLine($"Map.razor: TryRenderMapAsync - markerData.Count={markerData.Count}");
+            Console.WriteLine($"TryRenderMapAsync sending {markerData.Count} markers");
             if (markerData.Count > 0)
             {
-                Console.WriteLine($"Map.razor: First marker: {markerData[0]}");
+                Console.WriteLine($"First marker: {markerData[0]}");
             }
 
             await JS.InvokeVoidAsync("initTrashMap", (object)markerData);
         }
         catch (JSException ex)
         {
-            Console.WriteLine($"JS Exception: {ex.Message}");
+            Console.WriteLine($"JSException: {ex.Message}");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error rendering map: {ex.GetType().Name}: {ex.Message}");
+            Console.WriteLine($"TryRenderMapAsync error: {ex.GetType().Name}: {ex.Message}");
         }
     }
 

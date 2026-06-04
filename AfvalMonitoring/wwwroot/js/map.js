@@ -1,6 +1,8 @@
 // Google Maps initialization for trash locations
 let map;
 let googleMapsApiKey = null;
+let googleMapsReady = false;
+let pendingMarkers = null;
 
 // Set the Google Maps API key (called from Blazor component)
 window.setGoogleMapsKey = function(key) {
@@ -12,13 +14,26 @@ window.setGoogleMapsKey = function(key) {
         const script = document.createElement('script');
         script.src = `https://maps.googleapis.com/maps/api/js?key=${key}`;
         script.async = true;
-        script.defer = true;
+        script.defer = false;
+        script.onload = function() {
+            console.log('Google Maps API script loaded');
+            googleMapsReady = true;
+            // If markers are pending, render them now
+            if (pendingMarkers) {
+                console.log('Rendering pending markers');
+                window.initTrashMap(pendingMarkers);
+            }
+        };
+        script.onerror = function() {
+            console.error('Failed to load Google Maps API script');
+        };
         document.head.appendChild(script);
+    } else {
+        googleMapsReady = true;
     }
 };
 
 window.initTrashMap = function(markers) {
-    console.log('=== MAP.JS DEBUG ===');
     console.log('initTrashMap called with', markers ? markers.length : 0, 'markers');
     if (markers && markers.length > 0) {
         console.log('First marker:', JSON.stringify(markers[0]));
@@ -27,26 +42,26 @@ window.initTrashMap = function(markers) {
     // Check if map element exists
     const mapElement = document.getElementById('map');
     if (!mapElement) {
-        console.error('❌ Map element not found');
+        console.error('Map element not found');
         return;
     }
-    console.log('✓ Map element found');
+    console.log('Map element found');
 
-    // Check if Google Maps is loaded
-    if (typeof google === 'undefined' || typeof google.maps === 'undefined') {
-        console.error('❌ Google Maps API not loaded');
-        mapElement.innerHTML = '<div style="padding: 20px; color: red;"><strong>Fout:</strong> Google Maps API niet geladen. Check je api key en internet verbinding.</div>';
+    // Check if Google Maps is loaded - if not, queue the markers
+    if (!googleMapsReady || typeof google === 'undefined' || typeof google.maps === 'undefined') {
+        console.warn('Google Maps API not ready yet, queueing markers');
+        pendingMarkers = markers;
         return;
     }
-    console.log('✓ Google Maps API loaded');
+    console.log('Google Maps API loaded');
 
     if (!markers || markers.length === 0) {
-        console.warn('⚠ No markers provided');
+        console.warn('No markers provided');
         console.log('markers object:', markers);
         mapElement.innerHTML = '<div style="padding: 20px; color: orange;"><strong>Waarschuwing:</strong> Geen markeerpunten beschikbaar. Controleer of de backend draait op http://127.0.0.1:8000/ en of er data in de database staat.</div>';
         return;
     }
-    console.log('✓ Markers provided:', markers.length);
+    console.log('Markers provided:', markers.length);
 
     // Default center (Breda, Netherlands)
     const defaultCenter = { lat: 51.5761, lng: 4.7817 };
@@ -55,7 +70,7 @@ window.initTrashMap = function(markers) {
     testBackendConnection();
 
     try {
-        console.log('Creating map...');
+        console.log('Creating map');
         // Create map
         map = new google.maps.Map(mapElement, {
             zoom: 12,
@@ -172,13 +187,13 @@ async function testBackendConnection() {
     try {
         const response = await fetch('http://127.0.0.1:8000/');
         if (response.ok) {
-            console.log('✓ Backend is reachable at http://127.0.0.1:8000/');
+            console.log('Backend is reachable at http://127.0.0.1:8000/');
         } else {
-            console.error('❌ Backend returned status:', response.status);
+            console.error('Backend returned status:', response.status);
         }
     } catch (error) {
-        console.error('❌ Cannot reach backend at http://127.0.0.1:8000/', error.message);
-        console.error('Make sure the FastAPI backend is running!');
+        console.error('Cannot reach backend at http://127.0.0.1:8000/', error.message);
+        console.error('Make sure the FastAPI backend is running');
     }
 }
 function getConfidenceColor(confidence) {
