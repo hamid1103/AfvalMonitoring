@@ -1,0 +1,182 @@
+@page "/map"
+@rendermode InteractiveServer
+@using AfvalMonitoring.Services
+@using AfvalMonitoring.Models
+@inject AfvalService Service
+@inject IJSRuntime JS
+
+<h3>Afval Locaties Kaart</h3>
+
+<div class="mb-3" style="max-width: 420px;">
+    <label for="confidenceFilter" class="form-label">
+        Min confidence: @minConfidencePercentage%
+    </label>
+    <input id="confidenceFilter"
+           type="range"
+           class="form-range"
+           min="0"
+           max="100"
+           step="1"
+           @bind="minConfidencePercentage"
+           @bind:event="oninput"
+           @onchange="OnConfidenceChanged"
+           style="direction: rtl;" />
+    <div class="text-muted small">Slider loopt van 100% naar 0%. Standaard: 0% (alles >= 0%).</div>
+</div>
+
+@if (errorMessage != null)
+{
+    <div class="alert alert-danger">
+        <strong>❌ Fout bij laden van locaties:</strong>
+        <pre class="mb-0" style="white-space: pre-wrap;">@errorMessage</pre>
+    </div>
+}
+else if (locations == null)
+{
+    <p>⏳ Kaart laden...</p>
+}
+else if (locations.Count == 0)
+{
+    <p class="alert alert-warning">⚠️ Geen locaties gevonden met geldige coördinaten</p>
+}
+else
+{
+    <div class="mb-3">
+        <strong>📍 Totaal locaties: @locations.Count</strong>
+    </div>
+
+    <div id="map" style="width: 100%; height: 600px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); background-color: #f0f0f0;"></div>
+
+    <div class="mt-4">
+        <h5>Gedetecteerde afval</h5>
+        <div class="row g-3">
+            @foreach (var location in locations.Take(12))
+            {
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h6 class="card-title">@location.Label</h6>
+                            <p class="card-text small mb-2">
+                                <strong>Betrouwbaarheid:</strong> 
+                                <span class="badge bg-@GetConfidenceBadgeColor(location.Confidence)">
+                                    @location.Confidence?.ToString("P0")
+                                </span>
+                            </p>
+                            @if (!string.IsNullOrWhiteSpace(location.Locatie))
+                            {
+                                <p class="card-text small mb-2">
+                                    <strong>Adres:</strong> @location.Locatie
+                                </p>
+                            }
+                            @if (location.Latitude.HasValue && location.Longitude.HasValue)
+                            {
+                                <p class="card-text small mb-2">
+                                    <strong>Coördinaten:</strong> 
+                                    @location.Latitude.Value.ToString("F6"), @location.Longitude.Value.ToString("F6")
+                                </p>
+                            }
+                            @if (location.Tijd.HasValue)
+                            {
+                                <p class="card-text small text-muted">
+                                    @location.Tijd.Value.ToString("g")
+                                </p>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+        @if (locations.Count > 12)
+        {
+            <p class="text-muted small mt-3">... en @(locations.Count - 12) meer locaties</p>
+        }
+    </div>
+}
+
+@code {
+    private List<TrashLocation>? locations;
+    private int minConfidencePercentage;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadLocationsAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (locations == null || locations.Count == 0)
+        {
+            return;
+        }
+
+        Console.WriteLine($"Map.razor: OnAfterRenderAsync called, locations.Count={locations.Count}");
+        await TryRenderMapAsync();
+    }
+
+    private async Task OnConfidenceChanged(ChangeEventArgs args)
+    {
+        await LoadLocationsAsync();
+        await InvokeAsync(StateHasChanged);
+        await Task.Delay(100); // Allow rendering to complete
+        await TryRenderMapAsync();
+    }
+
+    private async Task LoadLocationsAsync()
+    {
+        try
+        {
+            errorMessage = null;
+            locations = await Service.GetTrashLocations(minConfidencePercentage);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading locations: {ex}");
+            errorMessage = $"{ex.GetType().Name}: {ex.Message}";
+            locations = new List<TrashLocation>();
+        }
+    }
+
+    private async Task TryRenderMapAsync()
+    {
+        try
+        {
+            var markerData = locations!
+                .Where(x => x.Latitude.HasValue && x.Longitude.HasValue)
+                .Select(x => new
+                {
+                    lat = x.Latitude,
+                    lng = x.Longitude,
+                    label = x.Label,
+                    confidence = x.Confidence,
+                    locatie = x.Locatie
+                })
+                .ToList();
+
+            Console.WriteLine($"Map.razor: TryRenderMapAsync - markerData.Count={markerData.Count}");
+            if (markerData.Count > 0)
+            {
+                Console.WriteLine($"Map.razor: First marker: {markerData[0]}");
+            }
+
+            await JS.InvokeVoidAsync("initTrashMap", (object)markerData);
+        }
+        catch (JSException ex)
+        {
+            Console.WriteLine($"JS Exception: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error rendering map: {ex.GetType().Name}: {ex.Message}");
+        }
+    }
+
+    private string GetConfidenceBadgeColor(float? confidence)
+    {
+        if (!confidence.HasValue) return "secondary";
+        if (confidence.Value >= 0.8) return "success";
+        if (confidence.Value >= 0.6) return "info";
+        if (confidence.Value >= 0.4) return "warning";
+        return "danger";
+    }
+}

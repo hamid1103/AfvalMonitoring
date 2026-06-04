@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backend Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test { margin: 20px 0; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #28a745; }
+        .error { background-color: #f8d7da; border-color: #dc3545; }
+        .loading { background-color: #fff3cd; border-color: #ffc107; }
+        button { padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background-color: #0056b3; }
+    </style>
+</head>
+<body>
+    <h1>Backend Connection Test</h1>
+    <button onclick="testAll()">Run All Tests</button>
+
+    <div id="root-test" class="test loading">
+        <strong>1. Root Endpoint (GET /):</strong>
+        <p id="root-result">Testing...</p>
+    </div>
+
+    <div id="afval-test" class="test loading">
+        <strong>2. Afval Endpoint (GET /afval):</strong>
+        <p id="afval-result">Testing...</p>
+    </div>
+
+    <div id="cors-test" class="test loading">
+        <strong>3. CORS Check:</strong>
+        <p id="cors-result">Testing...</p>
+    </div>
+
+    <script>
+        async function testAll() {
+            await testRoot();
+            await testAfval();
+            await testCors();
+        }
+
+        async function testRoot() {
+            const div = document.getElementById('root-test');
+            const result = document.getElementById('root-result');
+            try {
+                const response = await fetch('http://127.0.0.1:8000/', { mode: 'cors' });
+                const data = await response.json();
+                result.innerHTML = `✓ Success! Response: <pre>${JSON.stringify(data, null, 2)}</pre>`;
+                div.classList.remove('loading', 'error');
+                div.classList.add('success');
+            } catch (error) {
+                result.innerHTML = `❌ Error: ${error.message}`;
+                div.classList.remove('loading', 'success');
+                div.classList.add('error');
+            }
+        }
+
+        async function testAfval() {
+            const div = document.getElementById('afval-test');
+            const result = document.getElementById('afval-result');
+            try {
+                const response = await fetch('http://127.0.0.1:8000/afval', { mode: 'cors' });
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                const data = await response.json();
+                result.innerHTML = `✓ Success! Records: ${data.length}<br><pre>${JSON.stringify(data.slice(0, 2), null, 2)}</pre>`;
+                div.classList.remove('loading', 'error');
+                div.classList.add('success');
+            } catch (error) {
+                result.innerHTML = `❌ Error: ${error.message}`;
+                div.classList.remove('loading', 'success');
+                div.classList.add('error');
+            }
+        }
+
+        async function testCors() {
+            const div = document.getElementById('cors-test');
+            const result = document.getElementById('cors-result');
+            try {
+                const response = await fetch('http://127.0.0.1:8000/', { 
+                    mode: 'cors',
+                    method: 'OPTIONS'
+                });
+                const corsHeaders = {
+                    'Access-Control-Allow-Origin': response.headers.get('Access-Control-Allow-Origin'),
+                    'Access-Control-Allow-Methods': response.headers.get('Access-Control-Allow-Methods'),
+                    'Access-Control-Allow-Headers': response.headers.get('Access-Control-Allow-Headers')
+                };
+                result.innerHTML = `✓ CORS Headers: <pre>${JSON.stringify(corsHeaders, null, 2)}</pre>`;
+                div.classList.remove('loading', 'error');
+                div.classList.add('success');
+            } catch (error) {
+                result.innerHTML = `⚠ CORS may be blocked or backend unreachable: ${error.message}`;
+                div.classList.remove('loading', 'success');
+                div.classList.add('error');
+            }
+        }
+
+        // Auto-run tests
+        testAll();
+    </script>
+</body>
+</html>
