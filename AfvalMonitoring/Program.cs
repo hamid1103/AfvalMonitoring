@@ -1,6 +1,7 @@
 using AfvalMonitoring.Components;
 using AfvalMonitoring.Data;
 using AfvalMonitoring.Repositories.DataController;
+using AfvalMonitoring.Utils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 
@@ -38,6 +39,7 @@ builder.Services.AddSwaggerGen(options =>
 // Add services BEFORE building the app
 //builder.Services.AddTransient<IExampleRepo, SQLExampleRepo>(o => new SQLExampleRepo(sqlConnectionString!));
 builder.Services.AddScoped<IDataRepository, DataDbContextRepository>();
+builder.Services.AddScoped<IGoogleUtils, GoogleUtils>();
 
 // Register AfvalService for DI with HttpClient and set BaseAddress to backend API
 builder.Services.AddHttpClient<AfvalMonitoring.Services.AfvalService>(client =>
@@ -50,6 +52,16 @@ builder.Services.AddScoped<AfvalMonitoring.Services.GoogleMapsService>();
 
 
 var app = builder.Build();
+
+
+using (var scope = app.Services.CreateScope())
+{
+    Console.WriteLine("Running Migrations");
+    
+    var dbContext = scope.ServiceProvider.GetRequiredService<DataDbContext>();
+
+    dbContext.Database.Migrate();
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
