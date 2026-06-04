@@ -11,6 +11,7 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 builder.Services.AddControllers();
 
+var PredictionAPI = builder.Configuration.GetValue<string>("PredictionAPI");
 var sqlConnectionString = builder.Configuration.GetValue<string>("SqlConnectionString");
 var sqlConnectionStringFound = !string.IsNullOrWhiteSpace(sqlConnectionString);
 
@@ -41,17 +42,11 @@ builder.Services.AddScoped<IDataRepository, DataDbContextRepository>();
 // Register AfvalService for DI with HttpClient and set BaseAddress to backend API
 builder.Services.AddHttpClient<AfvalMonitoring.Services.AfvalService>(client =>
 {
-    client.BaseAddress = new Uri("http://127.0.0.1:8000/");
+    client.BaseAddress = new Uri(PredictionAPI);
 });
 
 
 var app = builder.Build();
-
-using (var scope = app.Services.CreateScope())
-{
-    var dbContext = scope.ServiceProvider.GetRequiredService<DataDbContext>();
-    dbContext.Database.Migrate();
-}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
