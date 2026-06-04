@@ -1,5 +1,21 @@
 // Google Maps initialization for trash locations
 let map;
+let googleMapsApiKey = null;
+
+// Set the Google Maps API key (called from Blazor component)
+window.setGoogleMapsKey = function(key) {
+    console.log('API key set in JavaScript');
+    googleMapsApiKey = key;
+
+    // Dynamically load Google Maps script with the correct API key
+    if (!window.google) {
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${key}`;
+        script.async = true;
+        script.defer = true;
+        document.head.appendChild(script);
+    }
+};
 
 window.initTrashMap = function(markers) {
     console.log('=== MAP.JS DEBUG ===');

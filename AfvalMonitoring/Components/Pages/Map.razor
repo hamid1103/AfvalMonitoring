@@ -3,6 +3,7 @@
 @using AfvalMonitoring.Services
 @using AfvalMonitoring.Models
 @inject AfvalService Service
+@inject GoogleMapsService GoogleMaps
 @inject IJSRuntime JS
 
 <h3>Afval Locaties Kaart</h3>
@@ -100,6 +101,17 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        try
+        {
+            var apiKey = GoogleMaps.GetApiKey();
+            await JS.InvokeVoidAsync("setGoogleMapsKey", apiKey);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error setting Google Maps API key: {ex.Message}");
+            errorMessage = $"Google Maps configuration error: {ex.Message}";
+        }
+
         await LoadLocationsAsync();
     }
 
