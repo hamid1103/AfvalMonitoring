@@ -47,6 +47,9 @@ builder.Services.AddHttpClient<AfvalMonitoring.Services.AfvalService>(client =>
     client.BaseAddress = new Uri(PredictionAPI);
 });
 
+// Register GoogleMapsService for DI
+builder.Services.AddScoped<AfvalMonitoring.Services.GoogleMapsService>();
+
 
 var app = builder.Build();
 
