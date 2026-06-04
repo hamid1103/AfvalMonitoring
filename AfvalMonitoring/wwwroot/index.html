@@ -3,15 +3,18 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' maps.googleapis.com https://maps.googleapis.com; connect-src 'self' maps.googleapis.com https://*.googleapis.com wss: https:;">
     <title>AfvalMonitoring</title>
     <base href="/" />
     <link href="css/bootstrap/bootstrap.min.css" rel="stylesheet" />
     <link href="app.css" rel="stylesheet" />
     <link rel="icon" type="image/png" href="favicon.png" />
+    <!-- Google Maps API is loaded dynamically from map.js when the API key is set -->
 </head>
 <body>
     <div id="app">Loading...</div>
     <script src="/_framework/blazor.web.js"></script>
-    <script src="/_framework/blazor.web.js"></script>
+    <script src="js/chart.js"></script>
+    <script src="js/map.js"></script>
 </body>
 </html>
