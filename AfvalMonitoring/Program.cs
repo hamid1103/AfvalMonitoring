@@ -56,7 +56,7 @@ var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
-    Console.WriteLine("Running Migrations");
+    Console.WriteLine("Running Migrations. This can take a while.");
     
     var dbContext = scope.ServiceProvider.GetRequiredService<DataDbContext>();
 
