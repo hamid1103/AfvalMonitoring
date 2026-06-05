@@ -42,9 +42,12 @@ builder.Services.AddScoped<IDataRepository, DataDbContextRepository>();
 builder.Services.AddScoped<IGoogleUtils, GoogleUtils>();
 
 // Register AfvalService for DI with HttpClient and set BaseAddress to backend API
+var sensoringApiKey = builder.Configuration.GetValue<string>("SensoringApiKey");
+
 builder.Services.AddHttpClient<AfvalMonitoring.Services.AfvalService>(client =>
 {
     client.BaseAddress = new Uri(PredictionAPI);
+    client.DefaultRequestHeaders.Add("X-Api-Key", sensoringApiKey);
 });
 
 // Register GoogleMapsService for DI
