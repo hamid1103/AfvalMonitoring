@@ -1,0 +1,303 @@
+@page "/voorspelling"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Components.Authorization
+@using AfvalMonitoring.Data
+@using AfvalMonitoring.Models
+@using Microsoft.AspNetCore.Identity
+@inject NavigationManager Nav
+@inject DataDbContext Db
+@inject IPasswordHasher<AppUser> Hasher
+@inject IHttpContextAccessor HttpContextAccessor
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
+@inject AfvalMonitoring.Services.AfvalService AfvalService
+
+<PageTitle>Voorspelling</PageTitle>
+
+<div class="container mt-4" style="max-width: 480px;">
+    <h3>Voorspelling</h3>
+
+    @if (!isLoggedIn)
+    {
+        <ul class="nav nav-tabs mb-3">
+            <li class="nav-item">
+                <button class="nav-link @(activeTab == "login" ? "active" : "")" @onclick='() => SwitchTab("login")'>Inloggen</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link @(activeTab == "register" ? "active" : "")" @onclick='() => SwitchTab("register")'>Registreren</button>
+            </li>
+        </ul>
+
+        @if (!string.IsNullOrEmpty(authError))
+        {
+            <div class="alert alert-danger">@authError</div>
+        }
+        @if (!string.IsNullOrEmpty(authSuccess))
+        {
+            <div class="alert alert-success">@authSuccess</div>
+        }
+
+        @if (activeTab == "login")
+        {
+            <form method="post" action="/Account/Login">
+                <input name="__RequestVerificationToken" type="hidden" value="@antiforgeryToken" />
+                <div class="mb-3">
+                    <label class="form-label">Gebruikersnaam</label>
+                    <input name="Input.Username" class="form-control" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Wachtwoord</label>
+                    <input name="Input.Password" type="password" class="form-control" />
+                </div>
+                <button type="submit" class="btn btn-primary">Inloggen</button>
+            </form>
+        }
+        else
+        {
+            <div class="mb-3">
+                <label class="form-label">Gebruikersnaam <span class="text-muted small">(min. 6 tekens)</span></label>
+                <input class="form-control" @bind="regUsername" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Wachtwoord</label>
+                <input type="password" class="form-control" @bind="regPassword" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Wachtwoord bevestigen</label>
+                <input type="password" class="form-control" @bind="regConfirm" />
+            </div>
+            <button class="btn btn-success" @onclick="HandleRegister">Account aanmaken</button>
+        }
+    }
+    else
+    {
+        <p class="text-muted small mb-3">
+            Ingelogd als <strong>@username</strong> &nbsp;|&nbsp;
+            <a href="/Account/Logout" data-enhance-nav="false">Uitloggen</a>
+        </p>
+
+        @if (!string.IsNullOrEmpty(formError))
+        {
+            <div class="alert alert-danger">@formError</div>
+        }
+        @if (!string.IsNullOrEmpty(formSuccess))
+        {
+            <div class="alert alert-success">@formSuccess</div>
+        }
+
+        <div class="mb-3">
+            <label class="form-label">Begindatum</label>
+            <input type="date" class="form-control" @bind="startDate" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Einddatum</label>
+            <input type="date" class="form-control" @bind="endDate" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Straat</label>
+            <select class="form-select" @bind="selectedStreet">
+                <option value="">-- Kies straat --</option>
+                <option value="all">Alle straten</option>
+                @foreach (var street in streets)
+                {
+                    <option value="@street">@street</option>
+                }
+            </select>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Afvallabel</label>
+            <select class="form-select" @bind="selectedLabel">
+                <option value="">-- Kies label --</option>
+                <option value="all">Alle labels</option>
+                @foreach (var label in Labels)
+                {
+                    <option value="@label">@label</option>
+                }
+            </select>
+        </div>
+
+        <button class="btn btn-primary" @onclick="HandleSubmit" disabled="@isLoading">
+            @if (isLoading)
+            {
+                <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+            }
+            Voorspelling aanvragen
+        </button>
+
+        @if (predictionResult != null)
+        {
+            <div class="mt-3">
+                <p><strong>Voorspelling:</strong> @predictionResult.Prediction</p>
+                <p><strong>Betrouwbaarheid:</strong> @predictionResult.Confidence</p>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthStateTask { get; set; } = default!;
+
+    // auth state
+    private bool isLoggedIn = false;
+    private string username = string.Empty;
+    private string activeTab = "login";
+    private string antiforgeryToken = string.Empty;
+
+    // register
+    private string regUsername = string.Empty;
+    private string regPassword = string.Empty;
+    private string regConfirm = string.Empty;
+
+    // messages
+    private string authError = string.Empty;
+    private string authSuccess = string.Empty;
+    private string formError = string.Empty;
+    private string formSuccess = string.Empty;
+
+    // voorspelling form
+    private DateTime startDate = DateTime.Today.AddDays(1);
+    private DateTime endDate = DateTime.Today.AddDays(2);
+    private string selectedLabel = string.Empty;
+    private string selectedStreet = string.Empty;
+    private bool isLoading = false;
+    private AfvalMonitoring.Models.PredictionResult? predictionResult;
+    private List<string> streets = [];
+
+    private static readonly string[] Labels = ["Biodegradable", "Paper", "Metal", "Plastic", "Glass", "Cloth"];
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthStateTask != null)
+        {
+            var state = await AuthStateTask;
+            isLoggedIn = state.User.Identity?.IsAuthenticated ?? false;
+            username = state.User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value
+                       ?? state.User.Identity?.Name
+                       ?? string.Empty;
+        }
+
+        var ctx = HttpContextAccessor.HttpContext;
+        if (ctx != null)
+            antiforgeryToken = Antiforgery.GetAndStoreTokens(ctx).RequestToken ?? string.Empty;
+
+        if (isLoggedIn)
+        {
+            try
+            {
+                var adressen = await AfvalService.GetAddresses();
+                streets = adressen
+                    .Select(ExtractStreetName)
+                    .Where(s => !string.IsNullOrWhiteSpace(s))
+                    .Distinct()
+                    .OrderBy(s => s)
+                    .ToList();
+            }
+            catch
+            {
+                streets = [];
+            }
+        }
+    }
+
+    // Haalt de straatnaam uit een volledig adres door het huisnummer en alles erna weg te halen.
+    // Bijv. "Van der Hoofdstraat 12A, Amsterdam" -> "Van der Hoofdstraat"
+    private static string ExtractStreetName(string adres)
+    {
+        // Pak het deel vóór een eventuele komma (straat + huisnummer)
+        var straatDeel = adres.Split(',')[0].Trim();
+
+        // Verwijder het huisnummer: eerste woord dat met een cijfer begint, en alles erna
+        var match = System.Text.RegularExpressions.Regex.Match(straatDeel, @"^(.*?)\s+\d");
+        return match.Success ? match.Groups[1].Value.Trim() : straatDeel;
+    }
+
+    private void SwitchTab(string tab)
+    {
+        activeTab = tab;
+        authError = string.Empty;
+        authSuccess = string.Empty;
+    }
+
+
+    private async Task HandleRegister()
+    {
+        authError = string.Empty;
+        authSuccess = string.Empty;
+
+        try
+        {
+            if (regUsername.Length < 6)
+            {
+                authError = "Gebruikersnaam moet minimaal 6 tekens zijn.";
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(regPassword))
+            {
+                authError = "Voer een wachtwoord in.";
+                return;
+            }
+            if (regPassword != regConfirm)
+            {
+                authError = "Wachtwoorden komen niet overeen.";
+                return;
+            }
+            if (Db.AppUsers.Any(u => u.Username == regUsername))
+            {
+                authError = "Gebruikersnaam al in gebruik.";
+                return;
+            }
+
+            var user = new AppUser { Username = regUsername };
+            user.PasswordHash = Hasher.HashPassword(user, regPassword);
+            Db.AppUsers.Add(user);
+            await Db.SaveChangesAsync();
+
+            authSuccess = "Account aangemaakt! Je kunt nu inloggen.";
+            activeTab = "login";
+            regUsername = regPassword = regConfirm = string.Empty;
+        }
+        catch (Exception ex)
+        {
+            authError = $"Fout: {ex.Message}";
+        }
+    }
+
+
+    private async Task HandleSubmit()
+    {
+        formError = string.Empty;
+        formSuccess = string.Empty;
+
+        if (endDate < startDate)
+        {
+            formError = "Einddatum moet na begindatum liggen.";
+            return;
+        }
+        if (string.IsNullOrEmpty(selectedStreet))
+        {
+            formError = "Kies een straat.";
+            return;
+        }
+        if (string.IsNullOrEmpty(selectedLabel))
+        {
+            formError = "Kies een afvallabel.";
+            return;
+        }
+
+        isLoading = true;
+        predictionResult = null;
+        try
+        {
+            predictionResult = await AfvalService.GetPrediction(selectedLabel, selectedStreet, startDate, endDate);
+            formSuccess = "Voorspelling ontvangen.";
+        }
+        catch (Exception ex)
+        {
+            formError = $"Fout bij aanvragen: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

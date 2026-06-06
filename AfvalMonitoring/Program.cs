@@ -1,7 +1,13 @@
 using AfvalMonitoring.Components;
 using AfvalMonitoring.Data;
+using AfvalMonitoring.Models;
 using AfvalMonitoring.Repositories.DataController;
 using AfvalMonitoring.Utils;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Components.Server;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 
@@ -10,7 +16,24 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+builder.Services.AddRazorPages();
 builder.Services.AddControllers();
+
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/Account/Login";
+        options.LogoutPath = "/Account/Logout";
+        options.Cookie.MaxAge = null;
+        options.Cookie.Expiration = null;
+        options.ExpireTimeSpan = TimeSpan.FromHours(8);
+        options.SlidingExpiration = false;
+    });
+builder.Services.AddAuthorization();
+builder.Services.AddCascadingAuthenticationState();
+builder.Services.AddScoped<AuthenticationStateProvider, ServerAuthenticationStateProvider>();
+builder.Services.AddScoped<IPasswordHasher<AppUser>, PasswordHasher<AppUser>>();
+builder.Services.AddHttpContextAccessor();
 
 var PredictionAPI = builder.Configuration.GetValue<string>("PredictionAPI");
 var sqlConnectionString = builder.Configuration.GetValue<string>("SqlConnectionString");
@@ -18,11 +41,11 @@ var sqlConnectionStringFound = !string.IsNullOrWhiteSpace(sqlConnectionString);
 
 builder.Services.AddDbContext<ExampleDBContext>(opt =>
 {
-    opt.UseSqlServer(sqlConnectionString);
+    opt.UseSqlServer(sqlConnectionString, o => o.EnableRetryOnFailure());
 });
 builder.Services.AddDbContext<DataDbContext>(opt =>
 {
-    opt.UseSqlServer(sqlConnectionString);
+    opt.UseSqlServer(sqlConnectionString, o => o.EnableRetryOnFailure());
 });
 
 builder.Services.AddEndpointsApiExplorer();
@@ -85,10 +108,14 @@ app.UseSwaggerUI(options =>
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
+app.UseAuthorization();
 app.UseAntiforgery();
+
 
 app.MapControllers();
 app.MapStaticAssets();
+app.MapRazorPages();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 

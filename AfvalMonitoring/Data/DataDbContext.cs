@@ -7,5 +7,6 @@ public class DataDbContext(DbContextOptions<DataDbContext> options) : DbContext(
 {
     public DbSet<DataObject> DataObjects { get; set; }
     public DbSet<Analyses> Analyses { get; set; }
-    public DbSet<Voorspelling>  Voorspellingen { get; set; }
+    public DbSet<Voorspelling> Voorspellingen { get; set; }
+    public DbSet<AppUser> AppUsers { get; set; }
 }

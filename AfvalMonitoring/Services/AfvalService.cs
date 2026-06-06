@@ -148,6 +148,32 @@
             return result;
         }
 
+        public async Task<List<string>> GetAddresses()
+        {
+            var json = await _http.GetStringAsync("afval");
+
+            using var document = JsonDocument.Parse(json);
+
+            return document.RootElement
+                .EnumerateArray()
+                .Select(item => item.TryGetProperty("Adres", out var adresProp)
+                    ? adresProp.GetString()
+                    : (item.TryGetProperty("adres", out var adresPropLower) ? adresPropLower.GetString() : null))
+                .Where(a => !string.IsNullOrWhiteSpace(a))
+                .Select(a => a!)
+                .Distinct()
+                .ToList();
+        }
+
+        public async Task<PredictionResult?> GetPrediction(string label, string street, DateTime startDate, DateTime endDate)
+        {
+            var query = $"prediction/simple?label={Uri.EscapeDataString(label)}" +
+                        $"&street={Uri.EscapeDataString(street)}" +
+                        $"&start={startDate:yyyy-MM-dd}&end={endDate:yyyy-MM-dd}";
+            var json = await _http.GetStringAsync(query);
+            return JsonSerializer.Deserialize<PredictionResult>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        }
+
         private (double? lat, double? lng) GetCoordinatesFromAddress(JsonElement item)
         {
             if (item.TryGetProperty("Locatie", out var locatieProp))
