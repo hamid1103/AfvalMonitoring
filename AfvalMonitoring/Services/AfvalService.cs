@@ -114,8 +114,10 @@
                         : (item.TryGetProperty("longitude", out var lonPropLower) && lonPropLower.ValueKind != JsonValueKind.Null ? lonPropLower.GetDouble() : GetCoordinatesFromAddress(item).lng),
                     Locatie = item.TryGetProperty("Locatie", out var locatieProp)
                         ? locatieProp.GetString()
-                        : (item.TryGetProperty("locatie", out var locatiePropLower) ? locatiePropLower.GetString()
-                        : (item.TryGetProperty("Adres", out var adresProp) ? adresProp.GetString() : null)),
+                        : (item.TryGetProperty("locatie", out var locatiePropLower) ? locatiePropLower.GetString() : null),
+                    Adres = item.TryGetProperty("Adres", out var adresProp)
+                        ? adresProp.GetString()
+                        : (item.TryGetProperty("adres", out var adresPropLower) ? adresPropLower.GetString() : null),
                     Tijd = item.TryGetProperty("Tijd", out var tijdProp) && DateTime.TryParse(tijdProp.GetString(), out var dt)
                         ? dt
                         : (item.TryGetProperty("tijd", out var tijdPropLower) && DateTime.TryParse(tijdPropLower.GetString(), out var dtLower) ? dtLower : (DateTime?)null)
@@ -131,6 +133,7 @@
                     Latitude = x.Latitude,
                     Longitude = x.Longitude,
                     Locatie = x.Locatie,
+                    Adres = x.Adres,
                     Tijd = x.Tijd
                 })
                 .ToList();
@@ -147,34 +150,22 @@
 
         private (double? lat, double? lng) GetCoordinatesFromAddress(JsonElement item)
         {
-            string? address = null;
-            string? locatie = null;
-
-            if (item.TryGetProperty("Adres", out var adresProp))
-                address = adresProp.GetString();
-
             if (item.TryGetProperty("Locatie", out var locatieProp))
-                locatie = locatieProp.GetString();
-
-            string fullAddress = $"{address} {locatie}".ToLowerInvariant();
-
-            var knownLocations = new Dictionary<string, (double lat, double lng)>
             {
-                { "station breda", (51.5810, 4.7655) },
-                { "stationsplein", (51.5810, 4.7655) },
-                { "van coothplein", (51.5740, 4.7730) },
-                { "willemplein", (51.5850, 4.7600) },
-                { "centrum", (51.5785, 4.7720) },
-                { "park", (51.5700, 4.7800) },
-            };
-
-            foreach (var (location, coords) in knownLocations)
-            {
-                if (fullAddress.Contains(location))
-                    return (coords.lat, coords.lng);
+                var locatie = locatieProp.GetString();
+                if (!string.IsNullOrWhiteSpace(locatie))
+                {
+                    var parts = locatie.Split(',');
+                    if (parts.Length == 2
+                        && double.TryParse(parts[0].Trim(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var parsedLat)
+                        && double.TryParse(parts[1].Trim(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var parsedLng))
+                    {
+                        return (parsedLat, parsedLng);
+                    }
+                }
             }
 
-            return (51.5761, 4.7817);
+            return (null, null);
         }
     }
 }

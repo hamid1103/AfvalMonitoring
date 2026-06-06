@@ -63,10 +63,10 @@ else
                                     @location.Confidence?.ToString("P0")
                                 </span>
                             </p>
-                            @if (!string.IsNullOrWhiteSpace(location.Locatie))
+                            @if (!string.IsNullOrWhiteSpace(location.Adres))
                             {
                                 <p class="card-text small mb-2">
-                                    <strong>Adres:</strong> @location.Locatie
+                                    <strong>Adres:</strong> @location.Adres
                                 </p>
                             }
                             @if (location.Latitude.HasValue && location.Longitude.HasValue)
@@ -161,7 +161,8 @@ else
                     lng = x.Longitude,
                     label = x.Label,
                     confidence = x.Confidence,
-                    locatie = x.Locatie
+                    locatie = x.Locatie,
+                    adres = x.Adres
                 })
                 .ToList();
 

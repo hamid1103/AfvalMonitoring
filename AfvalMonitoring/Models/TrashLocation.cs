@@ -21,6 +21,9 @@ public class TrashLocation
     [JsonPropertyName("locatie")]
     public string? Locatie { get; set; }
 
+    [JsonPropertyName("adres")]
+    public string? Adres { get; set; }
+
     [JsonPropertyName("tijd")]
     public DateTime? Tijd { get; set; }
 }

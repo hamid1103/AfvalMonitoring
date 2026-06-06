@@ -128,9 +128,9 @@ window.initTrashMap = function(markers) {
                 map: map,
                 title: marker.label,
                 icon: {
-                    url: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0Ij48cmVjdCB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIGZpbGw9Im5vbmUiLz48cGF0aCBkPSJNMyA2aDE4TTggNnYtMmEyIDIgMCAwIDEgMi0yaDRhMiAyIDAgMCAxIDIgMnYyTTUgNnYxMGEyIDIgMCAwIDAgMiAyaDEwYTIgMiAwIDAgMCAyLTJWNk03IDZoMTBNMTAgNnY4TTEwIDEwaDRNMTAuNSA2djEwTTEzLjUgNnYxMCIgc3Ryb2tlPSIjRjU0MzM2IiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgZmlsbD0ibm9uZSIvPjwvc3ZnPg==',
-                    scaledSize: new google.maps.Size(24, 24),
-                    anchor: new google.maps.Point(12, 24)
+                    url: 'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+PHN2ZyB3aWR0aD0iODAwcHgiIGhlaWdodD0iODAwcHgiIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZlcnNpb249IjEuMSIgeG1sbnM6Y2M9Imh0dHA6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL25zIyIgeG1sbnM6ZGM9Imh0dHA6Ly9wdXJsLm9yZy9kYy9lbGVtZW50cy8xLjEvIj48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgwIC0xMDI4LjQpIj48cGF0aCBkPSJtMTIgMGMtNC40MTgzIDIuMzY4NWUtMTUgLTggMy41ODE3LTggOCAwIDEuNDIxIDAuMzgxNiAyLjc1IDEuMDMxMiAzLjkwNiAwLjEwNzkgMC4xOTIgMC4yMjEgMC4zODEgMC4zNDM4IDAuNTYzbDYuNjI1IDExLjUzMSA2LjYyNS0xMS41MzFjMC4xMDItMC4xNTEgMC4xOS0wLjMxMSAwLjI4MS0wLjQ2OWwwLjA2My0wLjA5NGMwLjY0OS0xLjE1NiAxLjAzMS0yLjQ4NSAxLjAzMS0zLjkwNiAwLTQuNDE4My0zLjU4Mi04LTgtOHptMCA0YzIuMjA5IDAgNCAxLjc5MDkgNCA0IDAgMi4yMDktMS43OTEgNC00IDQtMi4yMDkxIDAtNC0xLjc5MS00LTQgMC0yLjIwOTEgMS43OTA5LTQgNC00eiIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMCAxMDI4LjQpIiBmaWxsPSIjZTc0YzNjIi8+PHBhdGggZD0ibTEyIDNjLTIuNzYxNCAwLTUgMi4yMzg2LTUgNSAwIDIuNzYxIDIuMjM4NiA1IDUgNSAyLjc2MSAwIDUtMi4yMzkgNS01IDAtMi43NjE0LTIuMjM5LTUtNS01em0wIDJjMS42NTcgMCAzIDEuMzQzMSAzIDNzLTEuMzQzIDMtMyAzLTMtMS4zNDMxLTMtMyAxLjM0My0zIDMtM3oiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDAgMTAyOC40KSIgZmlsbD0iI2MwMzkyYiIvPjwvZz48L3N2Zz4=',
+                    scaledSize: new google.maps.Size(32, 32),
+                    anchor: new google.maps.Point(16, 32)
                 }
             });
 
@@ -141,7 +141,7 @@ window.initTrashMap = function(markers) {
                     <p style="margin: 4px 0; font-size: 12px;">
                         <strong>Betrouwbaarheid:</strong> ${marker.confidence ? (marker.confidence * 100).toFixed(0) + '%' : 'N/A'}
                     </p>
-                    ${marker.locatie ? `<p style="margin: 4px 0; font-size: 12px;"><strong>Adres:</strong> ${marker.locatie}</p>` : ''}
+                    ${marker.adres ? `<p style="margin: 4px 0; font-size: 12px;"><strong>Adres:</strong> ${marker.adres}</p>` : ''}
                     <p style="margin: 4px 0; font-size: 11px; color: #666;">
                         ${position.lat.toFixed(6)}, ${position.lng.toFixed(6)}
                     </p>
