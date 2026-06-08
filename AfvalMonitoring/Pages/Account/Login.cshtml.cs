@@ -31,9 +31,29 @@ public class LoginModel : PageModel
         public string Password { get; set; } = string.Empty;
     }
 
+    [BindProperty(SupportsGet = true)]
+    public string? ReturnUrl { get; set; }
+
     public async Task<IActionResult> OnPostAsync()
     {
-        var user = _db.AppUsers.FirstOrDefault(u => u.Username == Input.Username);
+        if (string.IsNullOrWhiteSpace(Input.Username) || string.IsNullOrWhiteSpace(Input.Password))
+        {
+            ErrorMessage = "Vul gebruikersnaam en wachtwoord in.";
+            return Page();
+        }
+
+        AppUser? user;
+        try
+        {
+            user = _db.AppUsers.FirstOrDefault(u => u.Username == Input.Username);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Login database error: {ex.Message}");
+            ErrorMessage = "Kan geen verbinding maken met de database. Probeer het later opnieuw.";
+            return Page();
+        }
+
         if (user == null)
         {
             ErrorMessage = "Gebruikersnaam of wachtwoord onjuist.";
@@ -57,6 +77,7 @@ public class LoginModel : PageModel
         var properties = new AuthenticationProperties { IsPersistent = false };
         await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity), properties);
 
-        return Redirect("/voorspelling");
+        var redirectUrl = !string.IsNullOrWhiteSpace(ReturnUrl) ? ReturnUrl : "/voorspelling";
+        return Redirect(redirectUrl);
     }
 }

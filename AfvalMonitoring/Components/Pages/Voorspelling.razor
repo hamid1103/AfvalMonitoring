@@ -38,18 +38,22 @@
 
         @if (activeTab == "login")
         {
-            <form method="post" action="/Account/Login">
+            <form method="post" action="/Account/Login?ReturnUrl=/voorspelling">
                 <input name="__RequestVerificationToken" type="hidden" value="@antiforgeryToken" />
                 <div class="mb-3">
                     <label class="form-label">Gebruikersnaam</label>
-                    <input name="Input.Username" class="form-control" />
+                    <input name="Input.Username" class="form-control" autocomplete="username" />
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Wachtwoord</label>
-                    <input name="Input.Password" type="password" class="form-control" />
+                    <input name="Input.Password" type="password" class="form-control" autocomplete="current-password" />
                 </div>
-                <button type="submit" class="btn btn-primary">Inloggen</button>
+                <button type="submit" class="btn btn-primary w-100">Inloggen</button>
             </form>
+            <hr />
+            <p class="text-center mb-0 small">
+                Nog geen account? Gebruik het <strong>Registreren</strong> tabblad hierboven.
+            </p>
         }
         else
         {
@@ -130,6 +134,45 @@
                 <p><strong>Betrouwbaarheid:</strong> @predictionResult.Confidence</p>
             </div>
         }
+
+        @if (previousVoorspellingen.Count > 0)
+        {
+            <hr class="mt-4" />
+            <h5 class="mb-3">Vorige voorspellingen</h5>
+            <div class="table-responsive">
+                <table class="table table-sm table-striped">
+                    <thead>
+                        <tr>
+                            <th>Straat</th>
+                            <th>Van</th>
+                            <th>Tot</th>
+                            <th>Label</th>
+                            <th>Detecties</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var v in previousVoorspellingen)
+                        {
+                            var label = v.All > 0 ? "Alle" :
+                                        v.Biodegradable > 0 ? "Biodegradable" :
+                                        v.Paper > 0 ? "Paper" :
+                                        v.Metal > 0 ? "Metal" :
+                                        v.Plastic > 0 ? "Plastic" :
+                                        v.Glass > 0 ? "Glass" :
+                                        v.Cloth > 0 ? "Cloth" : "Onbekend";
+                            var count = v.All + v.Biodegradable + v.Paper + v.Metal + v.Plastic + v.Glass + v.Cloth;
+                            <tr>
+                                <td>@v.StreetName</td>
+                                <td>@v.StartDate.ToString("dd-MM-yyyy")</td>
+                                <td>@v.EndDate.ToString("dd-MM-yyyy")</td>
+                                <td>@label</td>
+                                <td>@count</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
     }
 </div>
 
@@ -162,6 +205,7 @@
     private bool isLoading = false;
     private AfvalMonitoring.Models.PredictionResult? predictionResult;
     private List<string> streets = [];
+    private List<AfvalMonitoring.Models.Voorspelling> previousVoorspellingen = [];
 
     private static readonly string[] Labels = ["Biodegradable", "Paper", "Metal", "Plastic", "Glass", "Cloth"];
 
@@ -196,17 +240,35 @@
             {
                 streets = [];
             }
+
+            LoadPreviousVoorspellingen();
+        }
+    }
+
+    private void LoadPreviousVoorspellingen()
+    {
+        try
+        {
+            var user = Db.AppUsers.FirstOrDefault(u => u.Username == username);
+            if (user == null) return;
+
+            previousVoorspellingen = Db.Voorspellingen
+                .Where(v => v.UserId == user.Id)
+                .OrderByDescending(v => v.StartDate)
+                .Take(10)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"LoadPreviousVoorspellingen error: {ex.Message}");
         }
     }
 
     // Haalt de straatnaam uit een volledig adres door het huisnummer en alles erna weg te halen.
-    // Bijv. "Van der Hoofdstraat 12A, Amsterdam" -> "Van der Hoofdstraat"
+
     private static string ExtractStreetName(string adres)
     {
-        // Pak het deel vóór een eventuele komma (straat + huisnummer)
         var straatDeel = adres.Split(',')[0].Trim();
-
-        // Verwijder het huisnummer: eerste woord dat met een cijfer begint, en alles erna
         var match = System.Text.RegularExpressions.Regex.Match(straatDeel, @"^(.*?)\s+\d");
         return match.Success ? match.Groups[1].Value.Trim() : straatDeel;
     }
@@ -289,7 +351,8 @@
         try
         {
             predictionResult = await AfvalService.GetPrediction(selectedLabel, selectedStreet, startDate, endDate);
-            formSuccess = "Voorspelling ontvangen.";
+            await SaveVoorspellingAsync(predictionResult);
+            formSuccess = "Voorspelling ontvangen en opgeslagen.";
         }
         catch (Exception ex)
         {
@@ -298,6 +361,38 @@
         finally
         {
             isLoading = false;
+        }
+    }
+
+    private async Task SaveVoorspellingAsync(AfvalMonitoring.Models.PredictionResult result)
+    {
+        try
+        {
+            var user = Db.AppUsers.FirstOrDefault(u => u.Username == username);
+            var count = int.TryParse(result.Prediction?.Split(' ')[0], out var n) ? n : 0;
+
+            var voorspelling = new AfvalMonitoring.Models.Voorspelling
+            {
+                StartDate = startDate,
+                EndDate = endDate,
+                StreetName = selectedStreet,
+                UserId = user?.Id,
+                Biodegradable = selectedLabel == "Biodegradable" ? count : 0,
+                Paper = selectedLabel == "Paper" ? count : 0,
+                Metal = selectedLabel == "Metal" ? count : 0,
+                Plastic = selectedLabel == "Plastic" ? count : 0,
+                Glass = selectedLabel == "Glass" ? count : 0,
+                Cloth = selectedLabel == "Cloth" ? count : 0,
+                All = selectedLabel == "all" ? count : 0,
+            };
+
+            Db.Voorspellingen.Add(voorspelling);
+            await Db.SaveChangesAsync();
+            LoadPreviousVoorspellingen();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"SaveVoorspelling error: {ex.Message}");
         }
     }
 }

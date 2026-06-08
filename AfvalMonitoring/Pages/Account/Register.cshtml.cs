@@ -31,23 +31,44 @@ public class RegisterModel : PageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
+        if (string.IsNullOrWhiteSpace(Input.Username) || Input.Username.Length < 6)
+        {
+            ErrorMessage = "Gebruikersnaam moet minimaal 6 tekens zijn.";
+            return Page();
+        }
+
+        if (string.IsNullOrWhiteSpace(Input.Password))
+        {
+            ErrorMessage = "Voer een wachtwoord in.";
+            return Page();
+        }
+
         if (Input.Password != Input.ConfirmPassword)
         {
             ErrorMessage = "Wachtwoorden komen niet overeen.";
             return Page();
         }
 
-        if (_db.AppUsers.Any(u => u.Username == Input.Username))
+        try
         {
-            ErrorMessage = "Gebruikersnaam al in gebruik.";
+            if (_db.AppUsers.Any(u => u.Username == Input.Username))
+            {
+                ErrorMessage = "Gebruikersnaam al in gebruik.";
+                return Page();
+            }
+
+            var user = new AppUser { Username = Input.Username };
+            user.PasswordHash = _hasher.HashPassword(user, Input.Password);
+
+            _db.AppUsers.Add(user);
+            await _db.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Register database error: {ex.Message}");
+            ErrorMessage = "Kan geen verbinding maken met de database. Probeer het later opnieuw.";
             return Page();
         }
-
-        var user = new AppUser { Username = Input.Username };
-        user.PasswordHash = _hasher.HashPassword(user, Input.Password);
-
-        _db.AppUsers.Add(user);
-        await _db.SaveChangesAsync();
 
         return Redirect("/Account/Login");
     }
