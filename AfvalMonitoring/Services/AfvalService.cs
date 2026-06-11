@@ -5,7 +5,7 @@ namespace AfvalMonitoring.Services
 
     public class AfvalService
     {
-        private readonly HttpClient _monitoringHttp;
+        private readonly HttpClient _sensoringHttp;
         private readonly HttpClient _predictionHttp;
 
         private static readonly JsonSerializerOptions JsonOptions = new()
@@ -15,13 +15,13 @@ namespace AfvalMonitoring.Services
 
         public AfvalService(IHttpClientFactory httpClientFactory)
         {
-            _monitoringHttp = httpClientFactory.CreateClient("MonitoringAPI");
+            _sensoringHttp = httpClientFactory.CreateClient("SensoringAPI");
             _predictionHttp = httpClientFactory.CreateClient("PredictionAPI");
         }
 
         private async Task<List<Detection>> GetDetections()
         {
-            var json = await _monitoringHttp.GetStringAsync(_monitoringHttp.BaseAddress);
+            var json = await _sensoringHttp.GetStringAsync(_sensoringHttp.BaseAddress);
             return JsonSerializer.Deserialize<List<Detection>>(json, JsonOptions) ?? new List<Detection>();
         }
 
