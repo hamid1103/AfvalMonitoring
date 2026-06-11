@@ -64,14 +64,24 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddScoped<IDataRepository, DataDbContextRepository>();
 builder.Services.AddScoped<IGoogleUtils, GoogleUtils>();
 
-// Register AfvalService for DI with HttpClient and set BaseAddress to backend API
+// Register AfvalService for DI with HttpClients for the prediction and monitoring APIs
 var sensoringApiKey = builder.Configuration.GetValue<string>("SensoringApiKey");
+var monitoringApi = builder.Configuration.GetValue<string>("MonitoringAPI");
+var monitoringApiKey = builder.Configuration.GetValue<string>("MonitoringAPIKey");
 
-builder.Services.AddHttpClient<AfvalMonitoring.Services.AfvalService>(client =>
+builder.Services.AddHttpClient("PredictionAPI", client =>
 {
     client.BaseAddress = new Uri(PredictionAPI);
     client.DefaultRequestHeaders.Add("X-Api-Key", sensoringApiKey);
 });
+
+builder.Services.AddHttpClient("MonitoringAPI", client =>
+{
+    client.BaseAddress = new Uri(monitoringApi);
+    client.DefaultRequestHeaders.Add("X-Api-Key", monitoringApiKey);
+});
+
+builder.Services.AddScoped<AfvalMonitoring.Services.AfvalService>();
 
 // Register GoogleMapsService for DI
 builder.Services.AddScoped<AfvalMonitoring.Services.GoogleMapsService>();
