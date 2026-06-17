@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 public class TrashLocation
 {
     [JsonPropertyName("id")]
-    public Guid? Id { get; set; }
+    public int? Id { get; set; }
 
     [JsonPropertyName("label")]
     public required string Label { get; set; }

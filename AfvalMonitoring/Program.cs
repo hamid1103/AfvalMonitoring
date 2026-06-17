@@ -62,7 +62,7 @@ builder.Services.AddSwaggerGen(options =>
 // Add services BEFORE building the app
 //builder.Services.AddTransient<IExampleRepo, SQLExampleRepo>(o => new SQLExampleRepo(sqlConnectionString!));
 builder.Services.AddScoped<IDataRepository, DataDbContextRepository>();
-builder.Services.AddScoped<IGoogleUtils, GoogleUtils>();
+//builder.Services.AddScoped<IGoogleUtils, GoogleUtils>();
 
 // Register AfvalService for DI with HttpClient and set BaseAddress to backend API
 var sensoringApiKey = builder.Configuration.GetValue<string>("SensoringApiKey");

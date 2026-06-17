@@ -4,8 +4,16 @@ namespace AfvalMonitoring.Utils;
 
 public class GoogleUtils : IGoogleUtils
 {
-    public Task<DataObject> AddLocationAddress(DataObject dataObject)
+    private GoogleClient _googleClient;
+
+    public GoogleUtils(string apiKey)
     {
-        throw new NotImplementedException();
+        
+    }
+    public async Task<DataObject> AddLocationAddress(DataObject dataObject)
+    {
+        if (_googleClient == null)
+            return dataObject;
+        return dataObject;
     }
 }
