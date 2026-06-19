@@ -13,10 +13,10 @@ namespace AfvalMonitoring.Services
             PropertyNameCaseInsensitive = true
         };
 
-        public AfvalService(IHttpClientFactory httpClientFactory)
+        public AfvalService(IHttpClientFactory factory)
         {
-            _sensoringHttp = httpClientFactory.CreateClient("SensoringAPI");
-            _predictionHttp = httpClientFactory.CreateClient("PredictionAPI");
+            _sensoringHttp = factory.CreateClient("SensoringAPI");
+            _predictionHttp = factory.CreateClient("PredictionAPI");
         }
 
         private async Task<List<Detection>> GetDetections()
@@ -33,11 +33,7 @@ namespace AfvalMonitoring.Services
             return detections
                 .Where(d => !string.IsNullOrWhiteSpace(d.Label) && d.Confidence >= threshold)
                 .GroupBy(d => d.Label)
-                .Select(g => new LabelCount
-                {
-                    Label = g.Key,
-                    Count = g.Count()
-                })
+                .Select(g => new LabelCount { Label = g.Key, Count = g.Count() })
                 .OrderByDescending(x => x.Count)
                 .ToList();
         }
@@ -72,10 +68,12 @@ namespace AfvalMonitoring.Services
                     && d.LocatieX.HasValue && d.LocatieY.HasValue)
                 .Select(d => new TrashLocation
                 {
+                    Id = d.Id,
                     Label = d.Label,
                     Confidence = (float)d.Confidence,
                     Latitude = d.LocatieX,
                     Longitude = d.LocatieY,
+                    Locatie = d.Location,
                     Adres = d.Location,
                     Tijd = d.Timestamp
                 })

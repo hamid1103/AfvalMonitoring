@@ -62,17 +62,17 @@ builder.Services.AddSwaggerGen(options =>
 // Add services BEFORE building the app
 //builder.Services.AddTransient<IExampleRepo, SQLExampleRepo>(o => new SQLExampleRepo(sqlConnectionString!));
 builder.Services.AddScoped<IDataRepository, DataDbContextRepository>();
-builder.Services.AddScoped<IGoogleUtils, GoogleUtils>();
+//builder.Services.AddScoped<IGoogleUtils, GoogleUtils>();
 
 // Register AfvalService for DI with HttpClients for the prediction and sensoring APIs
-var predictionApiKey = builder.Configuration.GetValue<string>("PredictionApiKey");
+var predictionApiKey = builder.Configuration.GetValue<string>("PredictionKey");
 var sensoringApi = builder.Configuration.GetValue<string>("SensoringAPI");
 var sensoringApiKey = builder.Configuration.GetValue<string>("SensoringApiKey");
 
 builder.Services.AddHttpClient("PredictionAPI", client =>
 {
     client.BaseAddress = new Uri(PredictionAPI);
-    client.DefaultRequestHeaders.Add("X-Api-Key", predictionApiKey);
+    client.DefaultRequestHeaders.Add("Authorization", predictionApiKey);
 });
 
 builder.Services.AddHttpClient("SensoringAPI", client =>

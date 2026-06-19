@@ -7,6 +7,17 @@
 
 <h3>Afval Analyse Dashboard</h3>
 
+<style>
+    #confidenceFilter::-webkit-slider-runnable-track {
+        background: linear-gradient(to right, #0d6efd var(--confidence-val, 0%), var(--bs-secondary-bg) var(--confidence-val, 0%));
+    }
+    #confidenceFilter::-moz-range-progress {
+        background-color: #0d6efd;
+        height: 0.5rem;
+        border-radius: 1rem;
+    }
+</style>
+
 <div class="mb-3" style="max-width: 420px;">
     <label for="confidenceFilter" class="form-label">
         Min confidence: @minConfidencePercentage%
@@ -17,11 +28,9 @@
            min="0"
            max="100"
            step="1"
-           @bind="minConfidencePercentage"
-           @bind:event="oninput"
-           @onchange="OnConfidenceChanged"
-           style="direction: rtl;" />
-    <div class="text-muted small">Slider loopt van 100% naar 0%. Standaard: 0% (alles >= 0%).</div>
+           value="@minConfidencePercentage"
+           @oninput="OnConfidenceChanged"
+           style="--confidence-val: @(minConfidencePercentage)%" />
 </div>
 
 @if (labelData == null || dagData == null)
@@ -100,6 +109,7 @@ else
     private List<LabelCount>? labelData;
     private List<AfvalPerDag>? dagData;
     private int minConfidencePercentage;
+    private CancellationTokenSource? _debounceCts;
 
     protected override async Task OnInitializedAsync()
     {
@@ -116,10 +126,22 @@ else
         await TryRenderChartAsync();
     }
 
-    private async Task OnConfidenceChanged(ChangeEventArgs _)
+    private async Task OnConfidenceChanged(ChangeEventArgs e)
     {
-        await LoadDataAsync();
-        await InvokeAsync(StateHasChanged);
+        if (int.TryParse(e.Value?.ToString(), out var v))
+            minConfidencePercentage = v;
+
+        _debounceCts?.Cancel();
+        _debounceCts = new CancellationTokenSource();
+        var token = _debounceCts.Token;
+
+        try
+        {
+            await Task.Delay(300, token);
+            await LoadDataAsync();
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (OperationCanceledException) { }
     }
 
     private async Task LoadDataAsync()
