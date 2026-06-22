@@ -72,7 +72,7 @@ var sensoringApiKey = builder.Configuration.GetValue<string>("SensoringApiKey");
 builder.Services.AddHttpClient("PredictionAPI", client =>
 {
     client.BaseAddress = new Uri(PredictionAPI);
-    client.DefaultRequestHeaders.Add("Authorization", predictionApiKey);
+    client.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", predictionApiKey);
 });
 
 builder.Services.AddHttpClient("SensoringAPI", client =>
