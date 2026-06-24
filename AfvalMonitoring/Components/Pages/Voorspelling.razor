@@ -268,9 +268,18 @@
 
     private static string ExtractStreetName(string adres)
     {
-        var straatDeel = adres.Split(',')[0].Trim();
-        var match = System.Text.RegularExpressions.Regex.Match(straatDeel, @"^(.*?)\s+\d");
-        return match.Success ? match.Groups[1].Value.Trim() : straatDeel;
+        var delen = adres.Split(',');
+        var eersteDeel = delen[0].Trim();
+
+        // Adres begint met huisnummer, bv. "22, Burgemeester Serrarislaan, ..."
+        if (delen.Length > 1 && System.Text.RegularExpressions.Regex.IsMatch(eersteDeel, @"^\d+[a-zA-Z]?$"))
+        {
+            return delen[1].Trim();
+        }
+
+        // Adres begint met straatnaam, bv. "Burgemeester Serrarislaan 22, ..."
+        var match = System.Text.RegularExpressions.Regex.Match(eersteDeel, @"^(.*?)\s+\d");
+        return match.Success ? match.Groups[1].Value.Trim() : eersteDeel;
     }
 
     private void SwitchTab(string tab)
